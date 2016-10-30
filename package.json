@@ -1,0 +1,29 @@
+{
+  "name": "demo-riot-mobx",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "rollup": "./node_modules/rollup/bin/rollup -c"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "babel-cli": "^6.18.0",
+    "babel-preset-es2015-rollup": "^1.2.0",
+    "mobx": "^2.6.0",
+    "riot": "^2.6.4",
+    "rollup": "^0.36.3",
+    "rollup-plugin-babel": "^2.6.1",
+    "rollup-plugin-commonjs": "^5.0.5",
+    "rollup-plugin-node-resolve": "^2.0.0",
+    "rollup-plugin-replace": "^1.1.1",
+    "rollup-plugin-riot": "^0.4.3"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "rollup-stream": "^1.14.0",
+    "vinyl-source-stream": "^1.1.0"
+  }
+}
