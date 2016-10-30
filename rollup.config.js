@@ -7,8 +7,8 @@ import replace from 'rollup-plugin-replace'
 export default {
     entry: 'main.js',
     format: 'iife',
-    //sourceMap: true,
-    plugins: [replace({'process.env.NODE_ENV': JSON.stringify( 'production' )}),
+    sourceMap: true,
+    plugins: [replace({'process.env.NODE_ENV': JSON.stringify( 'development' )}),
               riot(),
               nodeResolve({browser: true, main:true, jsnext: true}),
               commonjs(),

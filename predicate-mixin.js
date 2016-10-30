@@ -52,13 +52,11 @@ export const getDocObserverMixin = (self) => {
 
 export const getPredicateObserverMixin = (self) => {
   return {
-    init: () => {
-    },
-
     subscribe: (predicate, args) => {
       let {ticket, name} = P.subscribe(predicate, args)
       let collection = collections[name]
 
+      // maybe ticket is the only necessary argument
       if(metadata[name + ':'  + ticket] == 'ready'){
         self.handle(ticket, collection)
       }
