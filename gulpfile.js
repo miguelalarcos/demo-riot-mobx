@@ -9,6 +9,13 @@ gulp.task('lodash', function() {
       ;
 });
 
+gulp.task('mobx', function() {
+  return rollup('mobx.rollup.config.js')
+      .pipe(source('mobx-bundle.js'))
+      .pipe(gulp.dest('./dist'))
+      ;
+});
+
 gulp.task('rollup', function() {
   return rollup('rollup.config.js')
     .pipe(source('bundle.js'))

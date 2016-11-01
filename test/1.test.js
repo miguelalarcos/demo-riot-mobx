@@ -6,8 +6,8 @@ class A{
     constructor(){
         this.items = []
     }
-    sort(a, b){
-        if(a.a >= b.a)
+    sortCmp(a, b){
+        if(a.a <= b.a)
             return 1
         return -1
     }
@@ -46,6 +46,21 @@ describe('test 1', ()=>{
         a.updateItems({type: 'add', newValue: {id: '0', a: 5}})
         a.updateItems({type: 'update', newValue: {id: '0', a: 7}})
         expect(a.items).to.be.eql([{id: '0', a: 7}])
+    })
+
+    it('test order', ()=>{
+        let a = new A()
+        let wr = UImixin(a)
+        _.mixin(a, wr)
+
+        let c = {a:1}
+        let d = {a:2}
+        let e = {a:3}
+        a.updateItems({type: 'add', newValue: e})
+        a.updateItems({type: 'add', newValue: c})
+        a.updateItems({type: 'add', newValue: d})
+
+        expect(a.items).to.be.eql([c, d, e])
     })
 
 })

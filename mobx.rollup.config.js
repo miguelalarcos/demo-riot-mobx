@@ -5,16 +5,15 @@ import riot from 'rollup-plugin-riot';
 import replace from 'rollup-plugin-replace'
 
 export default {
-    entry: 'main.js',
+    entry: 'node_modules/mobx/lib/mobx.min.js',
     format: 'iife',
     sourceMap: true,
     plugins: [replace({'process.env.NODE_ENV': JSON.stringify( 'development' )}),
-              riot(),
-              nodeResolve({browser: true, main:true, jsnext: true}),
-              commonjs(),
-              babel({"babelrc": false, "presets": ["es2015-rollup"]})
+        riot(),
+        nodeResolve({browser: true, main:true, jsnext: true}),
+        commonjs(),
+        babel({"babelrc": false, "presets": ["es2015-rollup"]})
     ],
-    external: ['lodash', 'mobx'],
-    globals: {lodash: 'lodash', mobx: 'mobx'},
-    dest: 'bundle.js'
+    moduleName: 'mobx',
+    dest: 'mobx-bundle.js'
 };
