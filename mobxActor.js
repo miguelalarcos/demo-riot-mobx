@@ -51,6 +51,4 @@ class mbxActor{
   }
 }
 
-mbx = new mbxActor()
-
-export const default mbx
+export const mbx = new mbxActor()

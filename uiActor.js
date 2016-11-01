@@ -1,3 +1,5 @@
+import _ from 'lodash'
+
 class uiActor{
   constructor(){
     this.ws = null
@@ -5,15 +7,13 @@ class uiActor{
   }
 }
 
-ui = new uiActor()
-
-export const default ui
+export const ui = new uiActor()
 
 export const UImixin = (self) => {
   return {
     ws: ui.ws,
     mbx: ui.mbx,
-    subscribeDoc(collection, id) => {
+    subscribeDoc: (collection, id) => {
       // check if id exists in collection and update self.doc with that initial value
       ui.mbx.collections[collection].observe((change) => {
         if(change.newValue.id == id){
@@ -26,11 +26,11 @@ export const UImixin = (self) => {
       let collection = ui.mbx.collections[name]
 
       // maybe ticket is the only necessary argument
-      if(metadata[name + ':'  + ticket] == 'ready'){
+      if(ui.mbx.metadata[name + ':'  + ticket] == 'ready'){
         self._handle(ticket, collection)
       }
       else{
-        const dispose = metadata.observe((change) => {
+        const dispose = ui.mbx.metadata.observe((change) => {
           if(change.name == name + ':' + ticket && change.newValue == 'ready'){
             self._handle(ticket, collection)
             dispose()
@@ -39,12 +39,56 @@ export const UImixin = (self) => {
       }
     },
     _handle: (ticket, collection) => {
-      self.items = collection.values().filter((x)=>x.ticket == ticket)
+      self.items = collection.values().filter((x)=> _.includes(x.tickets, ticket)) //x.ticket == ticket)
       collection.observe((change) => {
-        console.log(change)
-        if(change.newValue.ticket == ticket)
-          self.items.push({id: change.newValue.id, a: change.newValue.a})
+        //console.log(change)
+        tickets = change.newValue && change.newValue.tickets || change.oldValue.tickets
+        if(_.includes(tickets, ticket)){
+            self.updateItems(change)
+        }
       })
+    },
+    updateItems(change){
+        let doc, pos
+        switch (change.type) {
+            case 'add':
+                doc = change.newValue
+                pos = self.index(doc)
+                self.items.splice(pos, 0, doc)
+                break;
+            case 'update':
+                doc = change.newValue
+                pos = self.actualIndex(doc)
+                self.items.splice(pos, 1)
+                pos = self.index(doc)
+                self.items.splice(pos, 0, doc)
+                break;
+            case 'delete':
+                doc = change.oldValue
+                pos = self.actualIndex(doc)
+                self.items.splice(pos, 1)
+                break;
+        }
+
+    },
+    actualIndex: (doc) => {
+        let i = 0
+        for(let elem of self.items){
+            if(doc.id == elem.id)
+                return i
+            i++
+        }
+    },
+    index: (doc) => {
+        let i = 0
+        for(let elem of self.items){
+            let v = self.sort(doc, elem)
+            if(v == 1){
+                return i
+            }
+            i++
+        }
+        return self.items.length
     },
     onclick: () => {
       let collection = ui.mbx.collections['collection']
