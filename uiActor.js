@@ -2,7 +2,6 @@ import _ from 'lodash'
 
 class uiActor{
   constructor(){
-    this.ws = null
     this.mbx = null
   }
 }
@@ -11,7 +10,6 @@ export const ui = new uiActor()
 
 export const UImixin = (self) => {
   return {
-    ws: ui.ws,
     mbx: ui.mbx,
     subscribeDoc: (collection, id) => {
       // check if id exists in collection and update self.doc with that initial value
@@ -27,23 +25,23 @@ export const UImixin = (self) => {
 
       // maybe ticket is the only necessary argument
       if(ui.mbx.metadata[name + ':'  + ticket] == 'ready'){
-        self._handle(ticket, collection)
+        self.handle(ticket, collection)
       }
       else{
         const dispose = ui.mbx.metadata.observe((change) => {
           if(change.name == name + ':' + ticket && change.newValue == 'ready'){
-            self._handle(ticket, collection)
+            self.handle(ticket, collection)
             dispose()
           }
         })
       }
     },
-    _handle: (ticket, collection) => {
-      self.items = collection.values().filter((x)=> _.includes(x.tickets, ticket)) //x.ticket == ticket)
+    handle: (ticket, collection) => {
+      self.items = collection.values().filter((x)=> _.includes([...x.tickets], ticket))
       collection.observe((change) => {
-        //console.log(change)
-        tickets = change.newValue && change.newValue.tickets || change.oldValue.tickets
-        if(_.includes(tickets, ticket)){
+        console.log(change.newValue)
+        let tickets = change.newValue && change.newValue.tickets || change.oldValue.tickets
+        if(_.includes([...tickets], ticket)){
             self.updateItems(change)
         }
       })
@@ -62,6 +60,7 @@ export const UImixin = (self) => {
                 self.items.splice(pos, 1)
                 pos = self.index(doc)
                 self.items.splice(pos, 0, doc)
+                this.update()
                 break;
             case 'delete':
                 doc = change.oldValue
@@ -82,7 +81,7 @@ export const UImixin = (self) => {
     index: (doc) => {
         let i = 0
         for(let elem of self.items){
-            let v = self.sort(doc, elem)
+            let v = self.sortCmp(doc, elem)
             if(v == 1){
                 return i
             }
@@ -90,21 +89,5 @@ export const UImixin = (self) => {
         }
         return self.items.length
     },
-    onclick: () => {
-      let collection = ui.mbx.collections['collection']
-      let metadata = ui.mbx.metadata
-      
-      metadata.set('collection:1', 'init')
-      collection.set('0', {id:'0', a: 0, ticket: 1})
-      collection.set('1', {id:'1', a: 1, ticket: 2})
-      collection.set('2', {id:'2', a: 2, ticket: 1})
-
-      metadata.set('collection:1', 'ready')
-      collection.set('3', {id:'3', a: 3, ticket: 1})
-      collection.set('4', {id:'4', a: 4, ticket: 2})
-      collection.set('5', {id:'5', a: 5, ticket: 1})
-      console.log('---')
-      console.log(isObservable(collection.get('5')))
-    }
   }
 }
