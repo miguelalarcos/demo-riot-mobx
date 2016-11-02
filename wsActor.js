@@ -1,9 +1,10 @@
 class wsActor{
     constructor(){
         this.mbx = null
-        setTimeout(()=>this.setup, 5000);
+        setTimeout(this.setup.bind(this), 1000);
     }
     setup(){
+        console.log('setup')
         this.mbx.notify({type: 'init', predicate: 'predicateA', ticket: 1})
         this.mbx.notify({type: 'add', predicate: 'predicateA', ticket: 1, doc: {id:'0', a: 0}})
         this.mbx.notify({type: 'add', predicate: 'predicateA', ticket: 2, doc: {id:'1', a: 1}})

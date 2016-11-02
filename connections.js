@@ -6,4 +6,6 @@ ws.mbx = mbx
 ui.mbx = mbx
 mbx.ws = ws
 
+console.log('connections done!')
+
 // ws.start()

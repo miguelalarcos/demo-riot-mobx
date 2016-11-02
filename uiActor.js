@@ -37,12 +37,15 @@ export const UImixin = (self) => {
       }
     },
     handle: (ticket, collection) => {
+      console.log(collection.values(), ticket)
       self.items = collection.values().filter((x)=> _.includes([...x.tickets], ticket))
+        self.update()
       collection.observe((change) => {
         console.log(change.newValue)
         let tickets = change.newValue && change.newValue.tickets || change.oldValue.tickets
         if(_.includes([...tickets], ticket)){
             self.updateItems(change)
+            self.update()
         }
       })
     },

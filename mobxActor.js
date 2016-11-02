@@ -43,12 +43,15 @@ class mbxActor{
   }
 
   newCollection(name){
-    console.log(name)
     this.collections[name] = observable(asMap([], asReference))
   }
 
   register(predicate, coll){
     this.predicates.register(predicate, coll)
+  }
+
+  getCollection(predicate){
+    return this.predicates.registered[predicate]
   }
 
   notify(msg){
@@ -83,34 +86,35 @@ class mbxActor{
 
   insert(collection, doc, t=null){
     if(t) {
-      rollback = this.rollbacks[t]
+      let rollback = this.rollbacks[t]
       if(rollback) {
         rollback()
         delete this.rollbacks[t]
       }
-      aux = this.collections[collection].get(t) || this.collections[collection].get(doc.id)
-      tickets = aux && aux.tickets || new Set()
+      let aux = this.collections[collection].get(':'+t) || this.collections[collection].get(doc.id)
+      let tickets = aux && aux.tickets || new Set()
       tickets.add(t)
       doc.tickets = tickets
-      doc.id = id
+      // doc.id = id
       this.collections[collection].set(doc.id, doc)
+      this.collections[collection].delete(':'+t)
     }
     else{
-      t = ticket++
-      this.ws.insert(collection, doc, t)
+      let t = ticket++
+      // this.ws.insert(collection, doc, t)
       this.rollbacks[t] = () => this.collections[collection].delete(t)
-      this.collections[collection].set(t, doc)
+      this.collections[collection].set(':'+t, doc)
     }
   }
 
   update(collection, doc, t=null){
     if(!t){
-      this.ws.update(collection, doc, ticket++)
-      rollbackDoc = this.collections[collection].get(id)
-      this.rollbacks[doc.id] = () => this.collections[collection].set(id, rollbackDoc)
+      // this.ws.update(collection, doc, ticket++)
+      let rollbackDoc = this.collections[collection].get(doc.id)
+      this.rollbacks[doc.id] = () => this.collections[collection].set(doc.id, rollbackDoc)
     }
     else{
-      rollback = this.rollbacks[doc.id]
+      let rollback = this.rollbacks[doc.id]
       if(rollback) {
         rollback()
         delete this.rollbacks[doc.id]
@@ -123,11 +127,11 @@ class mbxActor{
   delete(collection, id, t=null){
     if(!t){
       this.ws.delete(collection, id, ticket++)
-      rollbackDoc = this.collections[collection].get(id)
+      let rollbackDoc = this.collections[collection].get(id)
       this.rollbacks[id] = () => this.collections[collection].set(id, rollbackDoc)
     }
     else{
-      rollback = this.rollbacks[id]
+      let rollback = this.rollbacks[id]
       if(rollback) {
         rollback()
         delete this.rollbacks[id]
