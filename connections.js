@@ -4,5 +4,6 @@ import {ui} from './uiActor.js'
 
 // ws.mbx = mbx
 ui.mbx = mbx
+//mbx.ws = ws
 
 // ws.start()
