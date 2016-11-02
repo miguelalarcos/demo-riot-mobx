@@ -23,6 +23,6 @@ gulp.task('rollup', function() {
     ;
 });
 
-gulp.task('watch', function() {
+gulp.task('watch', ['rollup'], function() {
   gulp.watch(['*.js','*.tag'], ['rollup']);
 });

@@ -51,14 +51,44 @@ class mbxActor{
     this.predicates.register(predicate, coll)
   }
 
+  notify(msg){
+    switch(msg.type){
+      case 'init':
+        this.metadata.set(msg.predicate + ':' + msg.ticket, 'init')
+        break
+      case 'ready':
+        this.metadata.set(msg.predicate + ':' + msg.ticket, 'ready')
+        break
+      case 'add':
+        this.insert(this.getCollection(msg.predicate), msg.doc, msg.ticket)
+        break
+      case 'update':
+        this.update(this.getCollection(msg.predicate), msg.doc, msg.ticket)
+        break
+      case 'delete':
+        this.delete(this.getCollection(msg.predicate), msg.id, msg.ticket)
+        break
+      case 'rollback':
+        rollback = this.rollbacks[msg.id]
+        if(rollback) {
+          rollback()
+          delete this.rollbacks[msg.id]
+        }
+        break
+      case 'rpc':
+
+        break
+    }
+  }
+
   insert(collection, doc, t=null){
     if(t) {
-      rollback = this.rollbacks[':'+t]
+      rollback = this.rollbacks[t]
       if(rollback) {
         rollback()
-        delete this.rollbacks[':'+t]
+        delete this.rollbacks[t]
       }
-      aux = this.collections[collection].get(':'+t) || this.collections[collection].get(doc.id)
+      aux = this.collections[collection].get(t) || this.collections[collection].get(doc.id)
       tickets = aux && aux.tickets || new Set()
       tickets.add(t)
       doc.tickets = tickets
@@ -68,8 +98,8 @@ class mbxActor{
     else{
       t = ticket++
       this.ws.insert(collection, doc, t)
-      this.rollbacks[':'+t] = () => this.collections[collection].delete(':'+t)
-      this.collections[collection].set(':'+t, doc)
+      this.rollbacks[t] = () => this.collections[collection].delete(t)
+      this.collections[collection].set(t, doc)
     }
   }
 

@@ -1,9 +1,9 @@
-// import ws from './wsActor.js'
+import {ws} from './wsActor.js'
 import {mbx} from './mobxActor.js'
 import {ui} from './uiActor.js'
 
-// ws.mbx = mbx
+ws.mbx = mbx
 ui.mbx = mbx
-//mbx.ws = ws
+mbx.ws = ws
 
 // ws.start()

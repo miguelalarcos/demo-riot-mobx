@@ -24,12 +24,12 @@ export const UImixin = (self) => {
       let collection = ui.mbx.collections[name]
 
       // maybe ticket is the only necessary argument
-      if(ui.mbx.metadata[name + ':'  + ticket] == 'ready'){
+      if(ui.mbx.metadata[predicate + ':'  + ticket] == 'ready'){
         self.handle(ticket, collection)
       }
       else{
         const dispose = ui.mbx.metadata.observe((change) => {
-          if(change.name == name + ':' + ticket && change.newValue == 'ready'){
+          if(change.name == predicate + ':' + ticket && change.newValue == 'ready'){
             self.handle(ticket, collection)
             dispose()
           }
