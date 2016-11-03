@@ -8,7 +8,10 @@ mbx.register('predicateA', 'collection')
 describe('test mbx', ()=>{
     it('test one insert', ()=> {
         mbx.notify({type: 'add', predicate: 'collection', doc: {a: 0}})
-        expect(mbx.collections['collection'].values()).to.be.eql([{id: ':1', a: 0, tickets: new Set([1])}])
+        let values = mbx.collections['collection'].values()
+        let tickets = values[0].tickets || new Set()
+        values[0].tickets = [...tickets]
+        expect(values).to.be.eql([{id: ':1', a: 0, tickets: [1]}])
     });
 
     it('test one insert and rollback', ()=> {
@@ -16,7 +19,9 @@ describe('test mbx', ()=>{
         mbx.clearTicket()
         mbx.notify({type: 'add', predicate: 'collection', doc: {a: 0}})
         mbx.notify({type: 'rollback', id: 1})
-        expect(mbx.collections['collection'].values()).to.be.eql([])
+
+        let values = mbx.collections['collection'].values()
+        expect(values).to.be.eql([])
     });
 
     it('test one insert and ok', ()=> {
@@ -24,7 +29,12 @@ describe('test mbx', ()=>{
         mbx.clearTicket()
         mbx.notify({type: 'add', predicate: 'collection', doc: {a: 0}})
         mbx.notify({type: 'add', predicate: 'collection', ticket: 1, doc: {id: '0', a: 0}})
-        expect(mbx.collections['collection'].values()).to.be.eql([{id: '0', a: 0, tickets: new Set([3])}])
+
+        let values = mbx.collections['collection'].values()
+        let tickets = values[0].tickets
+        values[0].tickets = [...tickets]
+
+        expect(values).to.be.eql([{id: '0', a: 0, tickets: [1]}])
     });
 
 })
