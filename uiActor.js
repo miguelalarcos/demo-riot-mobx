@@ -56,6 +56,7 @@ export const UImixin = (self) => {
                 doc = change.newValue
                 pos = self.index(doc)
                 self.items.splice(pos, 0, doc)
+                // self.update?
                 break;
             case 'update':
                 doc = change.newValue
@@ -63,12 +64,13 @@ export const UImixin = (self) => {
                 self.items.splice(pos, 1)
                 pos = self.index(doc)
                 self.items.splice(pos, 0, doc)
-                this.update()
+                self.update()
                 break;
             case 'delete':
                 doc = change.oldValue
                 pos = self.actualIndex(doc)
                 self.items.splice(pos, 1)
+                // self.update?
                 break;
         }
 

@@ -51,7 +51,15 @@ class mbxActor{
   }
 
   getCollection(predicate){
-    return this.predicates.registered[predicate]
+    return this.predicates.registered[predicate] || predicate
+  }
+
+  clear(collection){
+    this.collections[collection].clear()
+  }
+
+  clearTicket(){
+    ticket = 1
   }
 
   notify(msg){
@@ -72,7 +80,6 @@ class mbxActor{
         this.delete(this.getCollection(msg.predicate), msg.id, msg.ticket)
         break
       case 'rollback':
-        console.log(this.rollbacks)
         let rollback = this.rollbacks[msg.id]
         if(rollback) {
           rollback()
@@ -103,7 +110,11 @@ class mbxActor{
     else{
       let t = ticket++
       // this.ws.insert(collection, doc, t)
-      this.rollbacks[t] = () => this.collections[collection].delete(t)
+      this.rollbacks[t] = () => this.collections[collection].delete(':'+t)
+      let tickets = new Set()
+      tickets.add(t)
+      doc.tickets = tickets
+      doc.id = ':'+t
       this.collections[collection].set(':'+t, doc)
     }
   }
