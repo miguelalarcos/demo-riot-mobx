@@ -72,7 +72,8 @@ class mbxActor{
         this.delete(this.getCollection(msg.predicate), msg.id, msg.ticket)
         break
       case 'rollback':
-        rollback = this.rollbacks[msg.id]
+        console.log(this.rollbacks)
+        let rollback = this.rollbacks[msg.id]
         if(rollback) {
           rollback()
           delete this.rollbacks[msg.id]
@@ -109,7 +110,7 @@ class mbxActor{
 
   update(collection, doc, t=null){
     if(!t){
-      // this.ws.update(collection, doc, ticket++)
+      this.ws.update(collection, doc, ticket++)
       let rollbackDoc = this.collections[collection].get(doc.id)
       this.rollbacks[doc.id] = () => this.collections[collection].set(doc.id, rollbackDoc)
     }
