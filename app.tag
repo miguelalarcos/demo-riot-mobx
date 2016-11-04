@@ -2,12 +2,19 @@ import {UImixin} from './uiActor.js'
 <my-doc>
     <div>doc.a = {doc.a}</div>
     <button onclick={click}>click</button>
+    <div>listo: {ready}</div>
 
     <script>
+      this.ready = true
       this.mixin(UImixin(this))
       this.subscribeDoc('collection', '0')
       this.click = (e) => {
-        this.mbx.update('collection', {id:'0', a: 700})
+        this.ready = false
+        console.log(this.aa)
+        this.aa.rpc('insert', {id:'0', a: 700}).then((data)=>{
+            this.ready = true
+            this.update()
+        })
       }
     </script>
 </my-doc>

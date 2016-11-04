@@ -2,6 +2,7 @@ import _ from 'lodash'
 
 class uiActor{
   constructor(){
+    this.aa = null
     this.mbx = null
   }
 }
@@ -11,6 +12,7 @@ export const ui = new uiActor()
 export const UImixin = (self) => {
   return {
     mbx: ui.mbx,
+    aa: ui.aa,
     subscribeDoc: (collection, id) => {
       // check if id exists in collection and update self.doc with that initial value
       ui.mbx.collections[collection].observe((change) => {
@@ -20,16 +22,16 @@ export const UImixin = (self) => {
       })
     },
     subscribePredicate: (predicate, args) => {
-      let {ticket, name} = ui.mbx.predicates.getTicket(predicate, args)
-      let collection = ui.mbx.collections[name]
+      let {ticket, collection} = ui.mbx.subscribe(predicate, args)
+      // let {ticket, name} = ui.mbx.predicates.getTicket(predicate, args)
+      // let collection = ui.mbx.collections[name]
 
-      // maybe ticket is the only necessary argument
-      if(ui.mbx.metadata[predicate + ':'  + ticket] == 'ready'){
+      if(ui.mbx.metadata[ticket] == 'ready'){
         self.handle(ticket, collection)
       }
       else{
         const dispose = ui.mbx.metadata.observe((change) => {
-          if(change.name == predicate + ':' + ticket && change.newValue == 'ready'){
+          if(change.name == ticket && change.newValue == 'ready'){
             self.handle(ticket, collection)
             dispose()
           }
@@ -37,11 +39,9 @@ export const UImixin = (self) => {
       }
     },
     handle: (ticket, collection) => {
-      console.log(collection.values(), ticket)
       self.items = collection.values().filter((x)=> _.includes([...x.tickets], ticket))
         self.update()
       collection.observe((change) => {
-        console.log(change.newValue)
         let tickets = change.newValue && change.newValue.tickets || change.oldValue.tickets
         if(_.includes([...tickets], ticket)){
             self.updateItems(change)

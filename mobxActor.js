@@ -1,6 +1,5 @@
 import {observable, asMap, asReference} from 'mobx'
-
-let ticket = 1
+import {T} from './TicketActor.js'
 
 class Predicates {
   constructor(){
@@ -19,14 +18,14 @@ class Predicates {
         if(_.isEqual(args, p.args)){
           return {ticket: p.ticket, name: this.registered[name]}
         }else{
-          let t = ticket++
+          let t = T.getTicket()
           this.predicates[name].push({ticket: t, args: args})
           return {ticket: t, name: this.registered[name]}
         }
       }
     }
     else{
-      let t = ticket++
+      let t = T.getTicket()
       this.predicates[name] = [{ticket: t, args: args}]
       return {ticket: t, name: this.registered[name]}
     }
@@ -39,7 +38,15 @@ class mbxActor{
     this.collections = {}
     this.metadata = observable(asMap())
     this.predicates = new Predicates()
-    this.rollbacks = {}
+    this.promises = {}
+  }
+
+  subscribe(predicate, args){
+    console.log('yahoo!')
+    this.ws.subscribe(predicate, args)
+    let {ticket, name} = this.predicates.getTicket(predicate, args)
+    let collection = this.collections[name]
+    return {ticket, collection}
   }
 
   newCollection(name){
@@ -65,10 +72,10 @@ class mbxActor{
   notify(msg){
     switch(msg.type){
       case 'init':
-        this.metadata.set(msg.predicate + ':' + msg.ticket, 'init')
+        this.metadata.set(''+msg.ticket, 'init')
         break
       case 'ready':
-        this.metadata.set(msg.predicate + ':' + msg.ticket, 'ready')
+        this.metadata.set(''+msg.ticket, 'ready')
         break
       case 'add':
         this.insert(this.getCollection(msg.predicate), msg.doc, msg.ticket)
@@ -77,78 +84,26 @@ class mbxActor{
         this.update(this.getCollection(msg.predicate), msg.doc, msg.ticket)
         break
       case 'delete':
-        this.delete(this.getCollection(msg.predicate), msg.id, msg.ticket)
-        break
-      case 'rollback':
-        let rollback = this.rollbacks[msg.id]
-        if(rollback) {
-          rollback()
-          delete this.rollbacks[msg.id]
-        }
-        break
-      case 'rpc':
-
+        this.delete(this.getCollection(msg.predicate), msg.id)
         break
     }
   }
 
-  insert(collection, doc, t=null){
-    if(t) {
-      let rollback = this.rollbacks[t]
-      if(rollback) {
-        rollback()
-        delete this.rollbacks[t]
-      }
-      let aux = this.collections[collection].get(':'+t) || this.collections[collection].get(doc.id)
-      let tickets = aux && aux.tickets || new Set()
-      tickets.add(t)
-      doc.tickets = tickets
-      // doc.id = id
-      this.collections[collection].set(doc.id, doc)
-      this.collections[collection].delete(':'+t)
-    }
-    else{
-      let t = ticket++
-      // this.ws.insert(collection, doc, t)
-      this.rollbacks[t] = () => this.collections[collection].delete(':'+t)
-      let tickets = new Set()
-      tickets.add(t)
-      doc.tickets = tickets
-      doc.id = ':'+t
-      this.collections[collection].set(':'+t, doc)
-    }
+  insert(collection, doc, t){
+    let aux = this.collections[collection].get(':'+t) || this.collections[collection].get(doc.id)
+    let tickets = aux && aux.tickets || new Set()
+    tickets.add(t)
+    doc.tickets = tickets
+    this.collections[collection].set(doc.id, doc)
+    this.collections[collection].delete(':'+t)
   }
 
-  update(collection, doc, t=null){
-    if(!t){
-      this.ws.update(collection, doc, ticket++)
-      let rollbackDoc = this.collections[collection].get(doc.id)
-      this.rollbacks[doc.id] = () => this.collections[collection].set(doc.id, rollbackDoc)
-    }
-    else{
-      let rollback = this.rollbacks[doc.id]
-      if(rollback) {
-        rollback()
-        delete this.rollbacks[doc.id]
-      }
-    }
+  update(collection, doc, t){
     doc.tickets = this.collections[collection].get(doc.id).tickets
     this.collections[collection].set(doc.id, doc)
   }
 
-  delete(collection, id, t=null){
-    if(!t){
-      this.ws.delete(collection, id, ticket++)
-      let rollbackDoc = this.collections[collection].get(id)
-      this.rollbacks[id] = () => this.collections[collection].set(id, rollbackDoc)
-    }
-    else{
-      let rollback = this.rollbacks[id]
-      if(rollback) {
-        rollback()
-        delete this.rollbacks[id]
-      }
-    }
+  delete(collection, id){
     this.collections[collection].delete(id)
   }
 
