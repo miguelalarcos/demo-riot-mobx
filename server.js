@@ -3,8 +3,12 @@ const ServerActor = require('./ServerActor.js').ServerActor
 const RethinkActor = require('./RethinkActor.js').RethinkActor
 
 class MyServer extends Controller{
-    rpc_add(a,b, callback){callback(a+b)}
-    subs_a(){return r.table('collectionA')}
+    rpc_add(a,b, callback){
+            callback(a+b)
+    }
+    subs_predicateA(){
+        return r.table('collection')
+    }
 }
 
 const sa = new ServerActor(MyServer)

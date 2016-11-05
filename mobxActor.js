@@ -26,6 +26,7 @@ class Predicates {
     }
     else{
       let t = T.getTicket()
+      console.log('ticket', t)
       this.predicates[name] = [{ticket: t, args: args}]
       return {ticket: t, name: this.registered[name]}
     }
@@ -41,10 +42,9 @@ class mbxActor{
     this.promises = {}
   }
 
-  subscribe(predicate, args){
-    console.log('yahoo!')
-    this.ws.subscribe(predicate, args)
+  subscribe(predicate, args={}){
     let {ticket, name} = this.predicates.getTicket(predicate, args)
+    this.ws.tell('subscribe', predicate, args, ticket)
     let collection = this.collections[name]
     return {ticket, collection}
   }

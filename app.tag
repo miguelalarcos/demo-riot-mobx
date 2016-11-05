@@ -10,7 +10,10 @@ import {UImixin} from './uiActor.js'
         this.mixin(UImixin(this))
         this.subscribePredicate('predicateA')
         this.sortCmp = (a,b) => 1
-        data = {a: Math.random()}
-        this.onclick = () => this.aa.rpc('add', 'collection', data)
+        let data = {a: Math.random()}
+
+        click(e){
+            this.aa.rpc('add', 'collection', data)
+        }
     </script>
 </app>

@@ -1,31 +1,31 @@
 import mobx from 'mobx'
 import _ from 'lodash'
+import {Actor} from './Actor.js'
 
-class wsActor{
+
+class WebSocketActor extends Actor{
+
     constructor(){
+        super()
         this.mbx = null
         this.aa = null
-        // setTimeout(this.setup.bind(this), 1000)
         this.connected = mobx.observable(false)
         this.offline = {}
         this.statePredicates = {}
         this.ws = null
-    }
-    _setup(){
-        console.log('setup')
-        this.mbx.notify({type: 'init', ticket: 1})
-        this.mbx.notify({type: 'add', predicate: 'predicateA', ticket: 1, doc: {id:'0', a: 0}})
-        this.mbx.notify({type: 'add', predicate: 'predicateA', ticket: 2, doc: {id:'1', a: 1}})
-        this.mbx.notify({type: 'add', predicate: 'predicateA', ticket: 1, doc: {id:'2', a: 2}})
-
-        this.mbx.notify({type: 'ready', ticket: 1})
-        this.mbx.notify({type: 'add', predicate: 'predicateA', ticket: 1, doc: {id:'3', a: 3}})
-        this.mbx.notify({type: 'add', predicate: 'predicateA', ticket: 2, doc: {id:'4', a: 4}})
-        this.mbx.notify({type: 'add', predicate: 'predicateA', ticket: 1, doc: {id:'5', a: 5}})
+        this.pending = []
     }
 
     send(obj){
-        this.ws.send(JSON.stringify(msg))
+        if(!this.connected.get()){
+            console.log('send when not connected')
+            this.pending.push(obj)
+        }
+        else {
+            console.log('send when connected', JSON.stringify(obj))
+            this.ws.send(JSON.stringify(obj))
+            console.log('sent')
+        }
     }
 
     subscribe(predicate, args, ticket){
@@ -43,17 +43,22 @@ class wsActor{
     }
 
     connect(){
+        console.log('connecting...')
         this.ws = new WebSocket('ws://' + document.location.hostname + ':8000')
         this.ws.onopen = () => this.onopen()
         this.ws.onmessage = (e) => this.onmessage(e.data)
-        this.ws.onclose = (e) => {setTimeout(this.connect.bind(this), 5000)}
+        this.ws.onclose = (e) => this.close()
         this.ws.onerror = (e) => console.log('error', e)
     }
 
     onopen(){
         this.connected.set(true)
-        keys = _.keys(this.offline)
-        for(k of keys){
+        while(this.pending.length){
+            let obj = this.pending.shift()
+            this.send(obj)
+        }
+        let keys = _.keys(this.offline)
+        for(let k of keys){
             doc = this.offline[k]
             if(!doc.id){
                 this.send({type: 'update', ticket: ticket, args: args})
@@ -63,14 +68,14 @@ class wsActor{
             delete this.offline[k]
         }
         keys = _.keys(this.statePredicates)
-        for(k of keys) {
-            pred = this.statePredicates[key]
+        for(let key of keys) {
+            let pred = this.statePredicates[key]
             //
         }
     }
 
     onmessage(msg){
-        obj = JSON.parse(msg)
+        let obj = JSON.parse(msg)
         if(_.includes(['add', 'update', 'delete'], msg.type)){
             this.mbx.notify(obj)
         }
@@ -82,14 +87,17 @@ class wsActor{
     onerror(){}
 
     onclose(){
+        setTimeout(this.connect.bind(this), 5000)
         this.connected.set(false)
     }
 
     rpc(doc){
+        console.log('rpc', doc)
         if(!this.connected.get()){
-            method = doc.method
-            args = doc.args
-            doc = args.doc
+            let method = doc.method
+            let args = doc.args
+            let doc = args.doc
+            let id
             if(method == 'add'){
                 this.offline[ticket] = doc
             }else if(method == 'update'){
@@ -103,13 +111,7 @@ class wsActor{
             this.send(doc)
         }
     }
-
-    result(ticket, data){
-        this.aa.notify({type: 'rpc', ticket: ticket, value: 1})
-        this.mbx.notify({type: 'update', predicate: 'predicateA', ticket: 1, doc: data})
-    }
-
 }
 
-export const ws = new wsActor()
+export const ws = new WebSocketActor()
 

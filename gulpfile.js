@@ -33,7 +33,7 @@ gulp.task('server', function () {
   nodemon({
     script: 'server.js'
     , ext: 'js'
-    , watch: ['src/*.*']
+    // , watch: ['src/*.*']
     , env: { 'NODE_ENV': 'development' }
   })
 })

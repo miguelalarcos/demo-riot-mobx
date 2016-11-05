@@ -12,4 +12,4 @@ mbx.ws = ws
 
 console.log('connections done!')
 
-// ws.start()
+ws.start()

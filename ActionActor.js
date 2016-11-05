@@ -8,14 +8,15 @@ class ActionActor{
     }
 
     rpc(method, ...args){
-        doc = {}
+        console.log('action actor rpc', method, args)
+        let doc = {}
         doc.type = method
         doc.args = args
         let t = T.getTicket()
         let deferred = Q.defer()
         this.promises[t] = deferred
         doc.ticket = t
-        this.ws.rpc(doc)
+        this.ws.tell('rpc', doc)
         return deferred.promise
     }
 

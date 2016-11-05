@@ -22,11 +22,29 @@ class Controller{
         })
     }
     handle_subscribe(predicate, args, ticket){
+        args = args || []
         let ret = {ticket: ticket, type: 'subscribe'}
         let pred = this['subs_' + predicate](...args)
         pred.changes({includeInitial: true}).run(this.conn, (err, cursor)=>{
             this.cursors.push(cursor)
             cursor.each((err, data)=>{
+                let type
+                if(!data.old_val){
+                    type = 'add'
+                    data.newVal = data.new_val
+                    delete data.old_val
+                    delete data.new_val
+                }else if(!data.new_val){
+                    type = 'delete'
+                    delete data.old_val
+                    delete data.new_val
+                }else{
+                    type = 'update'
+                    data.newVal = data.new_val
+                    delete data.old_val
+                    delete data.new_val
+                }
+                ret.type = type
                 ret.data=data
                 ret.predicate = predicate
                 this.ws.send(JSON.stringify(ret))}
@@ -34,7 +52,7 @@ class Controller{
             // cursor.on('data', (change) => {ret.data=change; this.ws.send(JSON.stringify(ret))})
         })
     }
-    rpc_insert(collection, doc, callback){
+    rpc_add(collection, doc, callback){
         r.table(collection).insert(doc).run(this.conn).then((doc)=>callback(doc.generated_keys[0]))
     }
     rpc_update(collection, id, doc, callback){
