@@ -13,18 +13,21 @@ export const UImixin = (self) => {
   return {
     mbx: ui.mbx,
     aa: ui.aa,
-    subscribeDoc: (collection, id) => {
-      // check if id exists in collection and update self.doc with that initial value
-      ui.mbx.collections[collection].observe((change) => {
-        if(change.newValue.id == id){
-          self.doc = change.newValue
-        }
+    subscribeDoc: (collection, rv) => {
+      let id = rv.get()
+      self.doc = ui.mbx.collections[collection].get(id)
+
+      rv.observe((id)=> {
+          self.doc = ui.mbx.collections[collection].get(id)
+          ui.mbx.collections[collection].observe((change) => {
+              if (change.newValue.id == id) {
+                  self.doc = change.newValue
+              }
+          })
       })
     },
     subscribePredicate: (predicate, args) => {
       let {ticket, collection} = ui.mbx.subscribe(predicate, args)
-      // let {ticket, name} = ui.mbx.predicates.getTicket(predicate, args)
-      // let collection = ui.mbx.collections[name]
 
       if(ui.mbx.metadata[ticket] == 'ready'){
         self.handle(ticket, collection)
