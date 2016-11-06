@@ -70,6 +70,7 @@ class mbxActor{
   }
 
   notify(msg){
+    console.log('notify', msg)
     switch(msg.type){
       case 'initializing':
         this.metadata.set(''+msg.ticket, 'initializing')
@@ -78,18 +79,20 @@ class mbxActor{
         this.metadata.set(''+msg.ticket, 'ready')
         break
       case 'add':
-        this.insert(this.getCollection(msg.predicate), msg.doc, msg.ticket)
+        this.insert(this.getCollection(msg.predicate), msg.data, msg.ticket)
         break
       case 'update':
-        this.update(this.getCollection(msg.predicate), msg.doc, msg.ticket)
+        this.update(this.getCollection(msg.predicate), msg.data, msg.ticket)
         break
       case 'delete':
-        this.delete(this.getCollection(msg.predicate), msg.id)
+        this.delete(this.getCollection(msg.predicate), msg.data.id)
         break
     }
   }
 
   insert(collection, doc, t){
+    console.log('insert', collection, doc, t)
+    doc = doc.newVal
     let aux = this.collections[collection].get(':'+t) || this.collections[collection].get(doc.id)
     let tickets = aux && aux.tickets || new Set()
     tickets.add(t)

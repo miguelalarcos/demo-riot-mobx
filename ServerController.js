@@ -11,10 +11,11 @@ class Controller{
             this.handle_subscribe(msg.predicate, msg.args, msg.ticket)
         }
         else{
-            this.handle_rpc('rpc_' + msg.type, msg.args, msg.ticket)
+            this.handle_rpc(msg.type, msg.args, msg.ticket)
         }
     }
     handle_rpc(command, args, ticket){
+        console.log('rpc', command, args, ticket)
         let ret = {ticket: ticket, type: 'rpc'}
         this['rpc_' + command](...args, (val)=>{
             ret.data=val
