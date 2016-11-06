@@ -42,6 +42,7 @@ class Controller{
                             delete data.new_val
                         } else if (!data.new_val) {
                             type = 'delete'
+                            data.id = data.old_val.id
                             delete data.old_val
                             delete data.new_val
                         } else {
@@ -60,12 +61,19 @@ class Controller{
             // cursor.on('data', (change) => {ret.data=change; this.ws.send(JSON.stringify(ret))})
         })
     }
+
     rpc_add(collection, doc, callback){
         r.table(collection).insert(doc).run(this.conn).then((doc)=>callback(doc.generated_keys[0]))
     }
+
     rpc_update(collection, id, doc, callback){
         r.table(collection).get(id).update(doc).run(this.conn).then((doc)=>callback(doc.replaced))
     }
+
+    rpc_delete(collection, id, callback){
+        r.table(collection).get(id).delete().run(this.conn).then((doc)=>callback(doc.deleted))
+    }
+
     close(){
         for(let c of this.cursors){
             c.close()
