@@ -42,7 +42,7 @@ class mbxActor{
     this.promises = {}
   }
 
-  subscribe(predicate, args={}){
+  subscribe(predicate, args=[]){
     let {ticket, name} = this.predicates.getTicket(predicate, args)
     this.ws.tell('subscribe', predicate, args, ticket)
     let collection = this.collections[name]
@@ -71,8 +71,8 @@ class mbxActor{
 
   notify(msg){
     switch(msg.type){
-      case 'init':
-        this.metadata.set(''+msg.ticket, 'init')
+      case 'initializing':
+        this.metadata.set(''+msg.ticket, 'initializing')
         break
       case 'ready':
         this.metadata.set(''+msg.ticket, 'ready')

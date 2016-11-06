@@ -21,6 +21,7 @@ class ActionActor{
     }
 
     notify(msg){
+        console.log('Action actor', msg)
         this.promises[msg.ticket].resolve(msg.value)
     }
 }

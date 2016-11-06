@@ -17,14 +17,12 @@ class WebSocketActor extends Actor{
     }
 
     send(obj){
+        console.log('send', JSON.stringify(obj))
         if(!this.connected.get()){
-            console.log('send when not connected')
             this.pending.push(obj)
         }
         else {
-            console.log('send when connected', JSON.stringify(obj))
             this.ws.send(JSON.stringify(obj))
-            console.log('sent')
         }
     }
 
@@ -43,6 +41,7 @@ class WebSocketActor extends Actor{
     }
 
     connect(){
+        self = this
         console.log('connecting...')
         this.ws = new WebSocket('ws://' + document.location.hostname + ':8000')
         this.ws.onopen = () => this.onopen()
@@ -76,7 +75,7 @@ class WebSocketActor extends Actor{
 
     onmessage(msg){
         let obj = JSON.parse(msg)
-        if(_.includes(['add', 'update', 'delete'], msg.type)){
+        if(_.includes(['add', 'update', 'delete', 'initializing', 'ready'], obj.type)){
             this.mbx.notify(obj)
         }
         else{
