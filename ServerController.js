@@ -2,13 +2,15 @@ class Controller{
     constructor(ws, conn){
         this.ws = ws
         this.conn = conn
-        this.cursors = []
+        this.cursors = {}
     }
     notify(msg){
         console.log(msg)
         msg = JSON.parse(msg)
         if(msg.type == 'subscribe'){
             this.handle_subscribe(msg.predicate, msg.args, msg.ticket)
+        }else if(msg.type == 'unsubscribe'){
+            this.handle_unsubscribe(msg.ticket)
         }
         else{
             this.handle_rpc(msg.type, msg.args, msg.ticket)
@@ -22,13 +24,19 @@ class Controller{
             this.ws.send(JSON.stringify(ret))
         })
     }
+
+    handle_unsubscribe(ticket){
+        this.cursors[ticket].close()
+        delete this.cursors[ticket]
+    }
+
     handle_subscribe(predicate, args, ticket){
         console.log('subscribe', predicate, args, ticket)
         args = args || []
         let ret = {ticket: ticket, type: 'subscribe'}
         let pred = this['subs_' + predicate](...args)
         pred.changes({includeInitial: true, includeStates: true}).run(this.conn, (err, cursor)=>{
-            this.cursors.push(cursor)
+            this.cursors[ticket] = cursor
             cursor.each((err, data)=> {
                     if (data.state) {
                         data = {type: data.state, ticket: ticket}
@@ -75,7 +83,7 @@ class Controller{
     }
 
     close(){
-        for(let c of this.cursors){
+        for(let c of Object.values(this.cursors)){
             c.close()
         }
         console.log('close')}

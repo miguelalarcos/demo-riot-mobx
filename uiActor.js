@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import mbox from 'mobx'
 
 class uiActor{
   constructor(){
@@ -13,6 +14,15 @@ export const UImixin = (self) => {
   return {
     mbx: ui.mbx,
     aa: ui.aa,
+    subscribeTicket: null,
+    link: (rv, uidest) =>{
+        self[uidest] = rv.get()
+        self.update()
+        mobx.observe(rv, (v) => {
+            self[uidest] = v
+            self.update()
+        })
+    },
     subscribeDoc: (collection, rv) => {
       let id = rv.get()
       self.doc = ui.mbx.collections[collection].get(id)
@@ -27,8 +37,11 @@ export const UImixin = (self) => {
       })
     },
     subscribePredicate: (predicate, args) => {
+      if(self.subscribeTicket){
+          ui.mbx.unsubscribe(self.subscribeTicket)
+      }
       let {ticket, collection} = ui.mbx.subscribe(predicate, args)
-
+      self.subscribeTicket = ticket
       if(ui.mbx.metadata[ticket] == 'ready'){
         self.handle(ticket, collection)
       }

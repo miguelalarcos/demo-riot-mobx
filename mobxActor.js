@@ -1,49 +1,44 @@
 import {observable, asMap, asReference} from 'mobx'
 import {T} from './TicketActor.js'
 
-class Predicates {
-  constructor(){
-    this.predicates = {}
-    this.registered = {}
-  }
-
-  register(predicate, collection){
-    this.registered[predicate] = collection
-  }
-
-  getTicket(name, args={}){
-    let p = this.predicates[name]
-    if(p){
-      for(p of p){
-        if(_.isEqual(args, p.args)){
-          return {ticket: p.ticket, name: this.registered[name]}
-        }else{
-          let t = T.getTicket()
-          this.predicates[name].push({ticket: t, args: args})
-          return {ticket: t, name: this.registered[name]}
-        }
-      }
-    }
-    else{
-      let t = T.getTicket()
-      console.log('ticket', t)
-      this.predicates[name] = [{ticket: t, args: args}]
-      return {ticket: t, name: this.registered[name]}
-    }
-  }
-}
-
 class mbxActor{
   constructor(){
     this.ws = null
     this.collections = {}
     this.metadata = observable(asMap())
-    this.predicates = new Predicates()
+    this.predicates = {}
     this.promises = {}
+    this.subsId = {}
+    this.registered = {}
   }
 
-  subscribe(predicate, args=[]){
-    let {ticket, name} = this.predicates.getTicket(predicate, args)
+  getTicket(predicate, args={}){
+    let pred = this.predicates[predicate]
+    if(pred){
+      for(let p of pred){
+        if(_.isEqual(args, p.args)){
+          return p.ticket
+        }else{
+          let t = T.getTicket()
+          this.predicates[name].push({ticket: t, args: args})
+          return t
+        }
+      }
+    }
+    else{
+      let t = T.getTicket()
+      this.predicates[predicate] = [{ticket: t, args: args}]
+      return t
+    }
+  }
+
+  subscribe(id, predicate, args=[]){
+    let ticket = this.getTicket(predicate, args)
+    let name = this.registered[predicate]
+    if(this.subsId[id]) {
+      this.ws.tell('unsubscribe', this.subsId[id])
+    }
+    this.subsId[id] = ticket
     this.ws.tell('subscribe', predicate, args, ticket)
     let collection = this.collections[name]
     return {ticket, collection}
@@ -53,12 +48,13 @@ class mbxActor{
     this.collections[name] = observable(asMap([], asReference))
   }
 
-  register(predicate, coll){
-    this.predicates.register(predicate, coll)
+  register(predicate, collection){
+    this.registered[predicate] = collection
+    // this.predicates.register(predicate, coll)
   }
 
   getCollection(predicate){
-    return this.predicates.registered[predicate] || predicate
+    return this.registered[predicate] || predicate
   }
 
   clear(collection){
