@@ -1,5 +1,6 @@
 import {observable, asMap, asReference} from 'mobx'
 import {T} from './TicketActor.js'
+import _ from 'lodash'
 
 class mbxActor{
   constructor(){
@@ -10,6 +11,7 @@ class mbxActor{
     this.promises = {}
     this.subsId = {}
     this.registered = {}
+    this.activeTickets = new Set()
   }
 
   getTicket(predicate, args={}){
@@ -34,9 +36,11 @@ class mbxActor{
 
   subscribe(id, predicate, args=[]){
     let ticket = this.getTicket(predicate, args)
+    this.activeTickets.add(ticket)
     let name = this.registered[predicate]
     if(this.subsId[id]) {
       this.ws.tell('unsubscribe', this.subsId[id])
+      this.activeTickets.delete(this.subsId[id])
     }
     this.subsId[id] = ticket
     this.ws.tell('subscribe', predicate, args, ticket)
@@ -67,6 +71,9 @@ class mbxActor{
 
   notify(msg){
     console.log('notify', msg)
+    if(!_.includes([...this.activeTickets], msg.ticket)){
+      return
+    }
     switch(msg.type){
       case 'initializing':
         this.metadata.set(''+msg.ticket, 'initializing')

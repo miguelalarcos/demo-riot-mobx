@@ -1,5 +1,6 @@
 import EventEmitter from 'eventemitter2'
 
+/*
 export class Actor extends EventEmitter {
     constructor(){
         super()
@@ -11,5 +12,16 @@ export class Actor extends EventEmitter {
     tell(method, ...args){
         this.emit('msg', method, ...args)
     }
-}
+}*/
 
+export class Actor extends EventEmmiter{
+    constructor(){
+        super()
+        this.input = []
+    }
+
+    tell(input){
+        this.input.push(input)
+        this.emmit('input')
+    }
+}

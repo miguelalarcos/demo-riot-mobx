@@ -1,61 +1,67 @@
-import mobx from 'mobx'
+import mobx, {asMap} from 'mobx'
 import _ from 'lodash'
 import {Actor} from './Actor.js'
-
+import {T} from './TicketActor.js'
 
 class WebSocketActor extends Actor{
 
     constructor(){
         super()
+        this.on('input', ()=>this.onInput())
+        this.connected = mobx.Observable(false)
         this.mbx = null
         this.aa = null
-        this.connected = mobx.observable(false)
-        this.offline = {}
+        this.offline = observable(asMap())
         this.statePredicates = {}
         this.ws = null
-        this.pending = []
-    }
 
-    send(obj){
-        console.log('send', JSON.stringify(obj))
-        if(!this.connected.get()){
-            this.pending.push(obj)
-        }
-        else {
-            this.ws.send(JSON.stringify(obj))
-        }
-    }
-
-    subscribe(predicate, args, ticket){
-        this.statePredicates[ticket] = {predicate, args}
-        this.send({type: 'subscribe', predicate, args, ticket})
-    }
-
-    unsubscribe(ticket){
-        delete this.statePredicates[ticket]
-        //
-    }
-
-    start(){
         this.connect()
     }
 
     connect(){
-        self = this
-        console.log('connecting...')
-        this.ws = new WebSocket('ws://' + document.location.hostname + ':8000')
-        this.ws.onopen = () => this.onopen()
-        this.ws.onmessage = (e) => this.onmessage(e.data)
-        this.ws.onclose = (e) => this.close()
-        this.ws.onerror = (e) => console.log('error', e)
+        let ws = this.ws = new WebSocket('ws://' + document.location.hostname + ':8000')
+        ws.on('open', (evt) => this.onOpen(evt))
+        ws.on('error', (evt) => this.onError(evt))
+        ws.on('message', (msg) => this.onMessage(msg))
+        ws.on('close', (evt) => this.onClose(evt))
     }
 
-    onopen(){
-        this.connected.set(true)
-        while(this.pending.length){
-            let obj = this.pending.shift()
-            this.send(obj)
+    onError(evt){
+        console.log(evt)
+        //setTimeout(()=>this.connect()
+        //,5000)
+    }
+
+    onClose(evt){
+        console.log(evt)
+        this.connected.set(false)
+        setTimeout(()=>this.connect()
+            ,5000)
+    }
+
+    onInput(){
+        //if(this.connected.get()){
+            while(this.input.length > 0){
+                let input = this.input[0]
+                this.handle(input)
+                this.input.shift()
+            }
+        //}
+    }
+
+    onMessage(msg){
+        let obj = JSON.parse(msg)
+        if(_.includes(['add', 'update', 'delete', 'initializing', 'ready'], obj.type)){
+            this.mbx.notify(obj)
         }
+        else{
+            this.aa.notify(obj)
+        }
+    }
+
+    onOpen(){
+        this.connected.set(true)
+        /*
         let keys = _.keys(this.offline)
         for(let k of keys){
             doc = this.offline[k]
@@ -71,45 +77,45 @@ class WebSocketActor extends Actor{
             let pred = this.statePredicates[key]
             //
         }
+        */
     }
 
-    onmessage(msg){
-        let obj = JSON.parse(msg)
-        if(_.includes(['add', 'update', 'delete', 'initializing', 'ready'], obj.type)){
-            this.mbx.notify(obj)
-        }
-        else{
-            this.aa.notify(obj)
-        }
-    }
+    handle(input){
+        let {method, args} = input
+        let ticket = T.getTicket()
 
-    onerror(){}
-
-    onclose(){
-        setTimeout(this.connect.bind(this), 5000)
-        this.connected.set(false)
-    }
-
-    rpc(doc){
-        console.log('rpc', doc)
         if(!this.connected.get()){
-            let method = doc.method
-            let args = doc.args
-            let doc = args.doc
-            let id
             if(method == 'add'){
-                this.offline[ticket] = doc
+                let doc = args[0]
+                this.offline.set(ticket, doc)
             }else if(method == 'update'){
-                id = doc.id || ticket
-                this.offline[id] = doc
+                let doc = args[0]
+                let id = doc.id || ticket
+                this.offline.set(id, doc)
             }else if(method == 'delete'){
-                id = doc.id || ticket
-                delete this.offline[id]
+                let id = args[0] || ticket
+                delete this.offline.delete(id)
             }
         }else{
-            this.send(doc)
+            this.send({type: method, args: args, ticket: ticket})
         }
+
     }
+
+    send(obj){
+        this.ws.send(JSON.stringify(obj))
+    }
+
+    subscribe(predicate, args, ticket){
+        this.statePredicates[ticket] = {predicate, args}
+        this.send({type: 'subscribe', predicate, args, ticket})
+    }
+
+    unsubscribe(ticket){
+        delete this.statePredicates[ticket]
+        this.send({type: 'unsubscribe', ticket})
+    }
+
 }
 
 export const ws = new WebSocketActor()
